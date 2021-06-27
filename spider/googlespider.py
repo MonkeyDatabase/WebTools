@@ -2,6 +2,7 @@ import json
 from bs4 import BeautifulSoup
 from mixins.attrdict import AttrDict
 from typing import List
+from constant.constant import GoogleSpiderConstant
 import importlib
 
 
@@ -123,7 +124,12 @@ class GoogleSpider(AttrDict):
     def __get_total_page(self):
         """get the page number at the bottom of the webpage(which is usually not accurate)
         """
-        pages_ = self.soup.find('span', id='xjs').findAll('td')
+        try:
+            pages_ = self.soup.find('span', id='xjs').findAll('td')
+        except Exception:
+            self.page_num = 0
+            print(f'[GOOGLESPIDER] get page_num Failed for \"{self.url}\"')
+            return
         page_num = 0
         for p in pages_:
             try:
@@ -135,11 +141,15 @@ class GoogleSpider(AttrDict):
 
     def search(self):
         self.__pre_process()
+        for error_flag in GoogleSpiderConstant.page_error_flag:
+            if error_flag in self.raw_html:
+                print(f'[GOOGLESPIDER] search Failed for \"{self.url}\", error reason is \"{error_flag}\"')
+                return
+        print(f'[GOOGLESPIDER] search Successed for \"{self.url}\"')
         self.__search_main_body()
         self.__search_news()
         self.__search_wiki()
         self.__get_total_page()
-
 
 
 if __name__ == '__main__':

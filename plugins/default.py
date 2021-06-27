@@ -17,7 +17,7 @@ class Plugin(TypePlugin):
 
     @cached
     def __get_source(self, url: str, headers: dict) -> bytes:
-        page = requests.get(url=url, headers=headers)
+        page = requests.get(url=url, headers=headers, allow_redirects=False)
         return page.content
 
     def get_source(self, url: Optional[str] = None) -> Tuple[BeautifulSoup, str]:

@@ -19,7 +19,7 @@ class Plugin(TypePlugin):
         page = await browser.newPage()
         await page.goto(url)
         try:
-            await page.waitForSelector('.kp-wholepage', timeout=5000)
+            await page.waitForSelector('.kp-wholepage', timeout=3000)
         except TimeoutError:
             print('[Headless] Time out.')
 
