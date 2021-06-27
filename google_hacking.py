@@ -5,12 +5,15 @@ from mixins.attrdict import AttrDict
 from constant.constant import GoogleHackingConstant as Constant
 from spider.googlespider import GoogleSpider
 from typing import List
+import argparse
 
 
 class Google_Hacking(AttrDict):
     __exclude_keys__ = {'_Google_Hacking__dork_spiders', 'target', 'dorks'}
+    junk_strings = ['facebook.com/', 'pinterest.com/', 'quora.com/', 'youtube.com/', 'youtu.be/']
+    junk_exclusion = r"(?:" + "|".join(junk_strings).replace(".", "\.") + ")"
 
-    def __init__(self, url, pages=1, offset=0, time_window='a'):
+    def __init__(self, url, pages=1, offset=0, time_window='a', exclude_junk=True):
         self.url = url
         self.target = re.split("\.", url)[0]
         self.dorks = []
@@ -18,6 +21,7 @@ class Google_Hacking(AttrDict):
         self.pages = pages
         self.offset = offset
         self.time_window = time_window
+        self.exclude_junk = exclude_junk
 
         self.__dork_spiders: List = []
 
@@ -74,6 +78,8 @@ class Google_Hacking(AttrDict):
                     dork_name: []
                 })
             if item not in self[item_name][dork_name]:
+                if self.exclude_junk and re.search(self.junk_exclusion, item['url']):
+                    continue
                 self[item_name][dork_name].append(item)
 
     def __post_processing(self):
@@ -93,7 +99,15 @@ class Google_Hacking(AttrDict):
 
 
 if __name__ == '__main__':
-    google_hacking = Google_Hacking('bytedance.com', pages=5)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('query', type=str, help='search query')
+    parser.add_argument('-o', '--offset', dest='offset', type=int, default=0, help='page offset to start from')
+    parser.add_argument('-p', '--pages', dest='pages', type=int, default=1, help='specify multiple pages')
+    parser.add_argument('-t', '--time-window', dest='time_window', type=str, default='a', help='time window')
+    parser.add_argument('-j', '--exclude-junk', dest='exclude_junk', action='store_false', help='exclude junk (yt, fb, quora)')
+    args = parser.parse_args()
+
+    google_hacking = Google_Hacking(args.query, pages=args.pages, offset=args.offset, time_window=args.time_window, exclude_junk=args.exclude_junk)
     google_hacking.search()
 
     print(json.dumps(dict(google_hacking), ensure_ascii=False, indent=2))
